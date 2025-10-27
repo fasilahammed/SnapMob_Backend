@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using SnapMob_Backend.DTO.ProductDTO;
+using SnapMob_Backend.Models;
 using SnapMob_Backend.Repositories.interfaces;
 using SnapMob_Backend.Services.Services.interfaces;
 
@@ -9,29 +10,35 @@ namespace SnapMob_Backend.Services.implementation
     {
         private readonly IProductRepository _productRepository;
         private readonly IMapper _mapper;
+        private readonly CloudinaryService _cloudinaryService;
 
-        public ProductService(IProductRepository productRepository, IMapper mapper)
+        public ProductService(
+            IProductRepository productRepository,
+            IMapper mapper,
+            CloudinaryService cloudinaryService)
         {
             _productRepository = productRepository;
             _mapper = mapper;
+            _cloudinaryService = cloudinaryService;
         }
 
+        // ✅ Get all products with pagination/filter
         public async Task<ProductListResponseDTO> GetProductsAsync(ProductQueryDTO query)
         {
             var products = await _productRepository.GetProductsAsync(
-                search: query.Search,
-                brandId: query.BrandId,
-                minPrice: query.MinPrice,
-                maxPrice: query.MaxPrice,
-                page: query.Page,
-                pageSize: query.PageSize
+                query.Search,
+                query.BrandId,
+                query.MinPrice,
+                query.MaxPrice,
+                query.Page,
+                query.PageSize
             );
 
             var totalCount = await _productRepository.GetProductsCountAsync(
-                search: query.Search,
-                brandId: query.BrandId,
-                minPrice: query.MinPrice,
-                maxPrice: query.MaxPrice
+                query.Search,
+                query.BrandId,
+                query.MinPrice,
+                query.MaxPrice
             );
 
             var productDtos = _mapper.Map<IEnumerable<ProductDTO>>(products);
@@ -45,10 +52,91 @@ namespace SnapMob_Backend.Services.implementation
             };
         }
 
+        // ✅ Get product by id
         public async Task<ProductDTO?> GetProductByIdAsync(int id)
         {
             var product = await _productRepository.GetByIdAsync(id);
             return _mapper.Map<ProductDTO>(product);
+        }
+
+        // ✅ Add product (supports multiple Cloudinary images)
+        public async Task<ProductDTO> AddProductAsync(ProductCreateUpdateDTO dto)
+        {
+            var product = _mapper.Map<Product>(dto);
+            product.Images = new List<ProductImage>();
+
+            if (dto.Images != null && dto.Images.Any())
+            {
+                foreach (var file in dto.Images)
+                {
+                    var upload = await _cloudinaryService.UploadImageAsync(file);
+
+                    product.Images.Add(new ProductImage
+                    {
+                        ImageUrl = upload.SecureUrl.ToString(),
+                        PublicId = upload.PublicId,
+                        IsMain = product.Images.Count == 0
+                    });
+                }
+            }
+
+            await _productRepository.AddAsync(product);
+            return _mapper.Map<ProductDTO>(product);
+        }
+
+        // ✅ Update product (replace images if provided)
+        public async Task<ProductDTO?> UpdateProductAsync(int id, ProductCreateUpdateDTO dto)
+        {
+            var existingProduct = await _productRepository.GetByIdAsync(id);
+            if (existingProduct == null)
+                return null;
+
+            _mapper.Map(dto, existingProduct);
+
+            if (dto.Images != null && dto.Images.Any())
+            {
+                // delete old images
+                foreach (var img in existingProduct.Images)
+                {
+                    if (!string.IsNullOrEmpty(img.PublicId))
+                        await _cloudinaryService.DeleteImageAsync(img.PublicId);
+                }
+
+                existingProduct.Images.Clear();
+
+                // upload new images
+                foreach (var file in dto.Images)
+                {
+                    var upload = await _cloudinaryService.UploadImageAsync(file);
+
+                    existingProduct.Images.Add(new ProductImage
+                    {
+                        ImageUrl = upload.SecureUrl.ToString(),
+                        PublicId = upload.PublicId,
+                        IsMain = existingProduct.Images.Count == 0
+                    });
+                }
+            }
+
+            await _productRepository.UpdateAsync(existingProduct);
+            return _mapper.Map<ProductDTO>(existingProduct);
+        }
+
+        // ✅ Delete product (also remove all Cloudinary images)
+        public async Task<bool> DeleteProductAsync(int id)
+        {
+            var product = await _productRepository.GetByIdAsync(id);
+            if (product == null)
+                return false;
+
+            foreach (var img in product.Images)
+            {
+                if (!string.IsNullOrEmpty(img.PublicId))
+                    await _cloudinaryService.DeleteImageAsync(img.PublicId);
+            }
+
+            await _productRepository.DeleteAsync(id);
+            return true;
         }
     }
 }

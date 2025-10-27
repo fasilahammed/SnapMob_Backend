@@ -50,7 +50,7 @@ namespace SnapMob_Backend.Services.implementation
                     Email = registerDto.Email,
                     Name = registerDto.Name,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
-                    Role = Roles.admin // Fixed casing convention
+                    Role = Roles.User // Fixed casing convention
                 };
 
                 await _userrepo.AddAsync(newUser);

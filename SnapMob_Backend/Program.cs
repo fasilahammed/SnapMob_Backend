@@ -1,10 +1,12 @@
-using CloudinaryDotNet;
+﻿using CloudinaryDotNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using SnapMob_Backend.Configuration;
+using Microsoft.OpenApi.Models;
+using SnapMob_Backend.Common;
 using SnapMob_Backend.Data;
-using SnapMob_Backend.Helpers;
+
 using SnapMob_Backend.Repositories.implementation;
 using SnapMob_Backend.Repositories.interfaces;
 using SnapMob_Backend.Services.implementation;
@@ -13,46 +15,90 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
-// Add services to the container.
-
+// --------------------------------------------------
+// 🔹 Add services to the container
+// --------------------------------------------------
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
+// ✅ Swagger Configuration (with JWT Auth button)
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "SnapMob API",
+        Version = "v1",
+        Description = "SnapMob Backend API with JWT Authentication"
+    });
+
+    // Add JWT Authorization
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter 'Bearer' followed by your JWT token. Example: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
+});
+
+// --------------------------------------------------
+// 🔹 Database Configuration
+// --------------------------------------------------
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Repositories
+// --------------------------------------------------
+// 🔹 Dependency Injection (Repositories & Services)
+// --------------------------------------------------
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-
-
+builder.Services.AddScoped<IProductBrandRepository, ProductBrandRepository>();
 
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<CloudinaryService>();
+builder.Services.AddScoped<IProductBrandService, ProductBrandService>();
 
 
+// --------------------------------------------------
+// 🔹 AutoMapper
+// --------------------------------------------------
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// JWT Authentication
-
+// --------------------------------------------------
+// 🔹 JWT Authentication Setup
+// --------------------------------------------------
 var secretKey = builder.Configuration["Jwt:Secret"];
-var key = Encoding.ASCII.GetBytes(secretKey);
+if (string.IsNullOrEmpty(secretKey))
+{
+    throw new InvalidOperationException("❌ JWT Secret is missing in appsettings.json under 'Jwt:Secret'");
+}
+
+var key = Encoding.UTF8.GetBytes(secretKey);
 
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
-
-
-
-
-
 .AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = true;
@@ -67,24 +113,21 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Bind Cloudinary config
-builder.Services.Configure<CloudinarySettings>(
-    builder.Configuration.GetSection("Cloudinary"));
+// --------------------------------------------------
+// 🔹 Authorization Policies (Role-based Access)
+// --------------------------------------------------
 
-var cloudinarySettings = builder.Configuration.GetSection("Cloudinary").Get<CloudinarySettings>();
-
-var account = new Account(
-    cloudinarySettings.CloudName,
-    cloudinarySettings.ApiKey,
-    cloudinarySettings.ApiSecret
-);
-
-var cloudinary = new Cloudinary(account);
-builder.Services.AddSingleton(cloudinary);
-
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("Admin", policy => policy.RequireRole("admin"));
+    options.AddPolicy("User", policy => policy.RequireRole("user", "admin"));
+    options.AddPolicy("Customer", policy => policy.RequireRole("user"));
+});
+// --------------------------------------------------
+// 🔹 Build & Configure Middleware
+// --------------------------------------------------
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -93,10 +136,26 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// ✅ Enable Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-
 app.MapControllers();
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        context.Response.ContentType = "application/json";
+        var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+
+        if (exceptionHandlerPathFeature != null)
+        {
+            Console.WriteLine($"❌ Global Exception: {exceptionHandlerPathFeature.Error.Message}");
+            Console.WriteLine(exceptionHandlerPathFeature.Error.StackTrace);
+
+            await context.Response.WriteAsync($"{{\"error\": \"{exceptionHandlerPathFeature.Error.Message}\"}}");
+        }
+    });
+});
 
 app.Run();

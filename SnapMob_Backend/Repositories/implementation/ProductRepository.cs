@@ -1,5 +1,5 @@
-﻿using SnapMob_Backend.Data;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using SnapMob_Backend.Data;
 using SnapMob_Backend.Models;
 using SnapMob_Backend.Repositories.interfaces;
 
@@ -67,6 +67,11 @@ namespace SnapMob_Backend.Repositories.implementation
                 query = query.Where(p => p.Price <= maxPrice.Value);
 
             return await query.CountAsync();
+        }
+
+        public async Task<bool> ProductExistsAsync(int id)
+        {
+            return await _context.Products.AnyAsync(p => p.Id == id);
         }
     }
 }

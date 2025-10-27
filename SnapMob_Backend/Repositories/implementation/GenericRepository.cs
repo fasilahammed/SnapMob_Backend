@@ -32,12 +32,15 @@ namespace SnapMob_Backend.Repositories.implementation
             await _context.SaveChangesAsync();
         }
 
+
+
         public async Task DeleteAsync(int id)
         {
             var entity = await _dbSet.FindAsync(id);
             if (entity != null)
             {
-                _dbSet.Remove(entity);
+                entity.IsDeleted = true;
+                _dbSet.Update(entity);
                 await _context.SaveChangesAsync();
             }
         }

@@ -12,6 +12,12 @@ namespace SnapMob_Backend.Repositories.interfaces
             int page = 1,
             int pageSize = 12);
 
-        Task<int> GetProductsCountAsync(string? search = null, int? brandId = null, decimal? minPrice = null, decimal? maxPrice = null);
+        Task<int> GetProductsCountAsync(
+            string? search = null,
+            int? brandId = null,
+            decimal? minPrice = null,
+            decimal? maxPrice = null);
+
+        Task<bool> ProductExistsAsync(int id);
     }
 }
