@@ -11,6 +11,8 @@ namespace SnapMob_Backend.Repositories.interfaces
         Task UpdateAsync(T entity);
         Task DeleteAsync(int id);
 
+        IQueryable<T> GetQueryable();
+
 
     }
 }
