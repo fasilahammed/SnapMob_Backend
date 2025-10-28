@@ -23,6 +23,7 @@ namespace SnapMob_Backend.Repositories.implementation
             int pageSize = 12)
         {
             var query = _context.Products
+                .Where(p=>!p.IsDeleted)
                 .Include(p => p.Brand)
                 .Include(p => p.Images)
                 .AsQueryable();
@@ -52,7 +53,9 @@ namespace SnapMob_Backend.Repositories.implementation
             decimal? minPrice = null,
             decimal? maxPrice = null)
         {
-            var query = _context.Products.AsQueryable();
+            var query = _context.Products
+                .Where(p => !p.IsDeleted)
+                .AsQueryable();
 
             if (!string.IsNullOrEmpty(search))
                 query = query.Where(p => p.Name.Contains(search));

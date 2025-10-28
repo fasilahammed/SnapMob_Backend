@@ -16,9 +16,15 @@ namespace SnapMob_Backend.Repositories.implementation
             _dbSet = context.Set<T>();
         }
 
-        public async Task<IEnumerable<T>> GetAllAsync() => await _dbSet.ToListAsync();
+        public virtual async Task<IEnumerable<T>> GetAllAsync()
+        {
+            return await _dbSet.Where(e => !e.IsDeleted).ToListAsync();
+        }
 
-        public virtual async Task<T?> GetByIdAsync(int id) => await _dbSet.FindAsync(id);
+        public virtual async Task<T?> GetByIdAsync(int id)
+        {
+            return await _dbSet.FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
+        }
 
         public async Task AddAsync(T entity)
         {

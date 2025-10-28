@@ -17,7 +17,7 @@ namespace SnapMob_Backend.Controllers
             _productService = productService;
         }
 
-        // ✅ GET: api/products
+      
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetAllProducts([FromQuery] ProductQueryDTO query)
@@ -26,7 +26,7 @@ namespace SnapMob_Backend.Controllers
             return Ok(new ApiResponse<ProductListResponseDTO>(200, "Products fetched successfully", result));
         }
 
-        // ✅ GET: api/products/{id}
+       
         [HttpGet("{id}")]
         [AllowAnonymous]
         public async Task<IActionResult> GetProductById(int id)
@@ -38,8 +38,7 @@ namespace SnapMob_Backend.Controllers
             return Ok(new ApiResponse<ProductDTO>(200, "Product fetched successfully", product));
         }
 
-        // ✅ POST: api/products
-        // ⚙️ Use [FromForm] to handle file uploads (multipart/form-data)
+       
         [HttpPost]
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> AddProduct([FromForm] ProductCreateUpdateDTO dto)
@@ -49,8 +48,7 @@ namespace SnapMob_Backend.Controllers
                 new ApiResponse<ProductDTO>(201, "Product created successfully", created));
         }
 
-        // ✅ PUT: api/products/{id}
-        // ⚙️ Use [FromForm] because update may also include a new image
+       
         [HttpPut("{id}")]
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductCreateUpdateDTO dto)
@@ -62,7 +60,7 @@ namespace SnapMob_Backend.Controllers
             return Ok(new ApiResponse<ProductDTO>(200, "Product updated successfully", updated));
         }
 
-        // ✅ DELETE: api/products/{id}
+       
         [HttpDelete("{id}")]
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> DeleteProduct(int id)

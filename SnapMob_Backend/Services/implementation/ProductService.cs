@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using SnapMob_Backend.DTO.ProductDTO;
 using SnapMob_Backend.Models;
 using SnapMob_Backend.Repositories.interfaces;
@@ -55,9 +56,14 @@ namespace SnapMob_Backend.Services.implementation
         // ✅ Get product by id
         public async Task<ProductDTO?> GetProductByIdAsync(int id)
         {
-            var product = await _productRepository.GetByIdAsync(id);
+            var product = await _productRepository.GetQueryable()
+                .Include(p => p.Brand)
+                .Include(p => p.Images)
+                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+
             return _mapper.Map<ProductDTO>(product);
         }
+
 
         // ✅ Add product (supports multiple Cloudinary images)
         public async Task<ProductDTO> AddProductAsync(ProductCreateUpdateDTO dto)

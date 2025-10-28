@@ -15,9 +15,7 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --------------------------------------------------
-// 🔹 Add services to the container
-// --------------------------------------------------
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
@@ -58,15 +56,11 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// --------------------------------------------------
-// 🔹 Database Configuration
-// --------------------------------------------------
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// --------------------------------------------------
-// 🔹 Dependency Injection (Repositories & Services)
-// --------------------------------------------------
+
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductBrandRepository, ProductBrandRepository>();
@@ -78,14 +72,9 @@ builder.Services.AddScoped<CloudinaryService>();
 builder.Services.AddScoped<IProductBrandService, ProductBrandService>();
 
 
-// --------------------------------------------------
-// 🔹 AutoMapper
-// --------------------------------------------------
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
-// --------------------------------------------------
-// 🔹 JWT Authentication Setup
-// --------------------------------------------------
+
 var secretKey = builder.Configuration["Jwt:Secret"];
 if (string.IsNullOrEmpty(secretKey))
 {
@@ -113,9 +102,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// --------------------------------------------------
-// 🔹 Authorization Policies (Role-based Access)
-// --------------------------------------------------
+
 
 builder.Services.AddAuthorization(options =>
 {
@@ -123,9 +110,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("User", policy => policy.RequireRole("user", "admin"));
     options.AddPolicy("Customer", policy => policy.RequireRole("user"));
 });
-// --------------------------------------------------
-// 🔹 Build & Configure Middleware
-// --------------------------------------------------
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -136,26 +121,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// ✅ Enable Authentication & Authorization
+
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.UseExceptionHandler(errorApp =>
-{
-    errorApp.Run(async context =>
-    {
-        context.Response.ContentType = "application/json";
-        var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
 
-        if (exceptionHandlerPathFeature != null)
-        {
-            Console.WriteLine($"❌ Global Exception: {exceptionHandlerPathFeature.Error.Message}");
-            Console.WriteLine(exceptionHandlerPathFeature.Error.StackTrace);
-
-            await context.Response.WriteAsync($"{{\"error\": \"{exceptionHandlerPathFeature.Error.Message}\"}}");
-        }
-    });
-});
 
 app.Run();
