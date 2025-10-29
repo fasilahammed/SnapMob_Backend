@@ -17,13 +17,14 @@ namespace SnapMob_Backend.Data
 
         public DbSet<Wishlist> Wishlists { get; set; }
 
+        public DbSet<Cart> Carts { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // -----------------------------
-            // User
-            // -----------------------------
+            
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
@@ -32,12 +33,15 @@ namespace SnapMob_Backend.Data
                 .Property(u => u.Role)
                 .HasConversion<string>();
 
-            // -----------------------------
-            // Product
-            // -----------------------------
             modelBuilder.Entity<Product>()
                 .Property(p => p.Price)
                 .HasPrecision(18, 2);
+
+            modelBuilder.Entity<Cart>()
+                .HasMany(c => c.CartItems)
+                .WithOne(ci => ci.Cart)
+                .HasForeignKey(ci => ci.CartId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

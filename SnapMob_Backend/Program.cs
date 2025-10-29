@@ -10,6 +10,7 @@ using SnapMob_Backend.Data;
 using SnapMob_Backend.Repositories.implementation;
 using SnapMob_Backend.Repositories.interfaces;
 using SnapMob_Backend.Services.implementation;
+using SnapMob_Backend.Services.interfaces;
 using SnapMob_Backend.Services.Services.implementation;
 using SnapMob_Backend.Services.Services.interfaces;
 using System.Text;
@@ -66,6 +67,7 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductBrandRepository, ProductBrandRepository>();
 builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
+builder.Services.AddScoped<ICartRepository, CartRepository>();
 
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -73,6 +75,7 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<CloudinaryService>();
 builder.Services.AddScoped<IProductBrandService, ProductBrandService>();
 builder.Services.AddScoped<IWishlistService, WishlistService>();
+builder.Services.AddScoped<ICartService, CartService>();
 
 
 
