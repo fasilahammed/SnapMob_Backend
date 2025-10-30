@@ -1,18 +1,18 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using SnapMob_Backend.Models;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace SnapMob_Backend.Models
+public class CartItem : BaseEntity
 {
-    public class CartItem : BaseEntity
-    {
-        public int CartId { get; set; }
-        public int ProductId { get; set; }
-        public int Quantity { get; set; }
+    public int CartId { get; set; }
+    public Cart Cart { get; set; }
 
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal PriceAtAddTime { get; set; }
+    public int ProductId { get; set; }
+    public Product Product { get; set; }
 
-        // 🧭 Navigation
-        public Cart? Cart { get; set; }
-        public Product? Product { get; set; }
-    }
+    public string ProductName { get; set; } = string.Empty;
+    public decimal Price { get; set; }
+
+    public int Quantity { get; set; } = 1;
+
+    public string? ImageUrl { get; set; }
 }

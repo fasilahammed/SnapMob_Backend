@@ -11,7 +11,6 @@ namespace SnapMob_Backend.Common
     {
         public MappingProfile()
         {
-            // 🧭 Entity → DTO
             CreateMap<Product, ProductDTO>()
                 .ForMember(dest => dest.ImageUrls,
                            opt => opt.MapFrom(src => src.Images.Select(i => i.ImageUrl)));
@@ -20,10 +19,9 @@ namespace SnapMob_Backend.Common
 
 
 
-            // 🧭 DTO → Entity
             CreateMap<ProductCreateUpdateDTO, Product>()
                 .ForMember(dest => dest.Brand, opt => opt.Ignore())
-                .ForMember(dest => dest.Images, opt => opt.Ignore()); // 🛠️ Ignore Images mapping
+                .ForMember(dest => dest.Images, opt => opt.Ignore());
 
             CreateMap<Wishlist, WishlistDTO>()
                  .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Product.Id))
@@ -32,13 +30,7 @@ namespace SnapMob_Backend.Common
                  .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Product.Price))
                  .ForMember(dest => dest.ImageUrls, opt => opt.MapFrom(src => src.Product.Images.Select(i => i.ImageUrl)));
 
-            CreateMap<CartItem, CartItemDTO>()
-                 .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
-                 .ForMember(dest => dest.ProductImage, opt => opt.MapFrom(src => src.Product.Images.Select(i => i.ImageUrl).FirstOrDefault()));
-
-            CreateMap<Cart, CartDTO>()
-                .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.CartItems))
-                .ForMember(dest => dest.TotalAmount, opt => opt.MapFrom(src => src.CartItems.Sum(i => i.PriceAtAddTime * i.Quantity)));
+           
 
         }
     }

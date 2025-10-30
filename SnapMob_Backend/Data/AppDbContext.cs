@@ -37,11 +37,6 @@ namespace SnapMob_Backend.Data
                 .Property(p => p.Price)
                 .HasPrecision(18, 2);
 
-            modelBuilder.Entity<Cart>()
-                .HasMany(c => c.CartItems)
-                .WithOne(ci => ci.Cart)
-                .HasForeignKey(ci => ci.CartId)
-                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

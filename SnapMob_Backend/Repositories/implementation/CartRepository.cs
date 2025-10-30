@@ -1,26 +1,44 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SnapMob_Backend.Data;
 using SnapMob_Backend.Models;
-using SnapMob_Backend.Repositories.interfaces;
+using SnapMob_Backend.Repositories.implementation;
 
-namespace SnapMob_Backend.Repositories.implementation
+public class CartRepository : GenericRepository<Cart>, ICartRepository
 {
-    public class CartRepository : GenericRepository<Cart>, ICartRepository
+    private readonly AppDbContext _context;
+
+    public CartRepository(AppDbContext context) : base(context)
     {
-        private readonly AppDbContext _context;
+        _context = context;
+    }
 
-        public CartRepository(AppDbContext context) : base(context)
-        {
-            _context = context;
-        }
+    public async Task<Cart?> GetCartWithItemsByUserIdAsync(int userId)
+    {
+        return await _context.Carts
+            .Include(c => c.Items)
+                .ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(c => c.UserId == userId && !c.IsDeleted);
+    }
 
-        public async Task<Cart?> GetCartWithItemsAsync(int userId)
+    public async Task<CartItem?> GetCartItemByIdAsync(int cartItemId, int userId)
+    {
+        return await _context.CartItems
+            .Include(ci => ci.Cart)
+            .FirstOrDefaultAsync(ci => ci.Id == cartItemId && ci.Cart.UserId == userId && !ci.Cart.IsDeleted);
+    }
+
+    public void Update(CartItem cartItem)
+    {
+        _context.CartItems.Update(cartItem);
+    }
+
+    public async Task ClearCartForUserAsync(int userId)
+    {
+        var cart = await GetCartWithItemsByUserIdAsync(userId);
+        if (cart != null && cart.Items.Any())
         {
-            return await _context.Carts
-                .Include(c => c.CartItems)
-                    .ThenInclude(ci => ci.Product)
-                        .ThenInclude(p => p.Images)
-                .FirstOrDefaultAsync(c => c.UserId == userId && !c.IsDeleted);
+            _context.CartItems.RemoveRange(cart.Items);
+            await _context.SaveChangesAsync();
         }
     }
 }

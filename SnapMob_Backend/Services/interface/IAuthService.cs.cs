@@ -8,7 +8,5 @@ namespace SnapMob_Backend.Services.Services.interfaces
         Task<AuthResponseDto> RegisterAsync(RegisterDto registerDto);
         Task<AuthResponseDto> LoginAsync(LoginDTO loginDto);
 
-        //Task<bool> RevokeTokenAsync(string token, string ipAddress);
-        //Task<AuthResponseDto> RefreshTokenAsync(string token, string ipAddress);
     }
 }

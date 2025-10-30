@@ -1,12 +1,10 @@
-﻿using SnapMob_Backend.DTO.CartDTO;
+﻿using SnapMob_Backend.Common;
 
-namespace SnapMob_Backend.Services.interfaces
+public interface ICartService
 {
-    public interface ICartService
-    {
-        Task<CartDTO> GetCartByUserIdAsync(int userId);
-        Task<CartDTO> AddToCartAsync(int userId, int productId, int quantity);
-        Task<bool> RemoveFromCartAsync(int userId, int productId);
-        Task<bool> ClearCartAsync(int userId);
-    }
+    Task<ApiResponse<object>> GetCartForUserAsync(int userId);
+    Task<ApiResponse<string>> AddToCartAsync(int userId, int productId, int quantity);
+    Task<ApiResponse<string>> UpdateCartItemAsync(int userId, int cartItemId, int quantity);
+    Task<ApiResponse<string>> RemoveCartItemAsync(int userId, int cartItemId);
+    Task<ApiResponse<string>> ClearCartAsync(int userId);
 }

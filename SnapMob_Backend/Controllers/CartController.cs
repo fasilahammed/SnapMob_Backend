@@ -1,53 +1,77 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SnapMob_Backend.Common;
 using SnapMob_Backend.DTO.CartDTO;
-using SnapMob_Backend.Services.interfaces;
+using System.Security.Claims;
 
-namespace SnapMob_Backend.Controllers
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class CartController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class CartController : ControllerBase
+    private readonly ICartService _cartService;
+
+    public CartController(ICartService cartService)
     {
-        private readonly ICartService _cartService;
+        _cartService = cartService;
+    }
 
-        public CartController(ICartService cartService)
-        {
-            _cartService = cartService;
-        }
+    [Authorize(Policy = "Customer")]
+    [HttpPost]
+    public async Task<IActionResult> Add([FromBody] AddToCartDTO dto)
+    {
+        int userId = GetUserId();
+        var response = await _cartService.AddToCartAsync(userId, dto.ProductId, dto.Quantity);
+        return StatusCode(response.StatusCode, response);
+    }
 
-        [HttpGet("{userId}")]
-        public async Task<IActionResult> GetCart(int userId)
-        {
-            var result = await _cartService.GetCartByUserIdAsync(userId);
-            return Ok(new ApiResponse<CartDTO>(200, "Cart fetched successfully", result));
-        }
+    [Authorize(Policy = "User")]
+    [HttpGet("{userId}")]
+    public async Task<IActionResult> GetByAdmin(int userId)
+    {
+        var response = await _cartService.GetCartForUserAsync(userId);
+        return StatusCode(response.StatusCode, response);
+    }
 
-        [HttpPost("{userId}/add")]
-        public async Task<IActionResult> AddItem(int userId, int productId, int quantity)
-        {
-            var result = await _cartService.AddToCartAsync(userId, productId, quantity);
-            return Ok(new ApiResponse<CartDTO>(200, "Item added to cart", result));
-        }
+    [Authorize(Policy = "Customer")]
+    [HttpGet]
+    public async Task<IActionResult> GetForUser()
+    {
+        int userId = GetUserId();
+        var response = await _cartService.GetCartForUserAsync(userId);
+        return StatusCode(response.StatusCode, response);
+    }
 
-        [HttpDelete("{userId}/remove/{productId}")]
-        public async Task<IActionResult> RemoveItem(int userId, int productId)
-        {
-            var success = await _cartService.RemoveFromCartAsync(userId, productId);
-            return success
-                ? Ok(new ApiResponse<string>(200, "Item removed successfully"))
-                : NotFound(new ApiResponse<string>(404, "Item not found"));
-        }
+    [Authorize(Policy = "Customer")]
+    [HttpPut("{cartItemId}")]
+    public async Task<IActionResult> UpdateItem(int cartItemId, [FromBody] UpdateQuantityDTO dto)
+    {
+        int userId = GetUserId();
+        var response = await _cartService.UpdateCartItemAsync(userId, cartItemId, dto.Quantity);
+        return StatusCode(response.StatusCode, response);
+    }
 
-        [HttpDelete("{userId}/clear")]
-        public async Task<IActionResult> ClearCart(int userId)
-        {
-            var success = await _cartService.ClearCartAsync(userId);
-            return success
-                ? Ok(new ApiResponse<string>(200, "Cart cleared successfully"))
-                : NotFound(new ApiResponse<string>(404, "Cart not found"));
-        }
+    [Authorize(Policy = "Customer")]
+    [HttpDelete("{cartItemId}")]
+    public async Task<IActionResult> DeleteItem(int cartItemId)
+    {
+        int userId = GetUserId();
+        var response = await _cartService.RemoveCartItemAsync(userId, cartItemId);
+        return StatusCode(response.StatusCode, response);
+    }
+
+    [Authorize(Policy = "Customer")]
+    [HttpDelete("clear")]
+    public async Task<IActionResult> Clear()
+    {
+        int userId = GetUserId();
+        var response = await _cartService.ClearCartAsync(userId);
+        return StatusCode(response.StatusCode, response);
+    }
+
+    private int GetUserId()
+    {
+        var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+        if (claim == null) throw new UnauthorizedAccessException("User claim not found.");
+        return int.Parse(claim.Value);
     }
 }

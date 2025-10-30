@@ -1,27 +1,18 @@
-﻿using CloudinaryDotNet;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Diagnostics;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using SnapMob_Backend.Common;
 using SnapMob_Backend.Data;
-
-using SnapMob_Backend.Repositories.implementation;
-using SnapMob_Backend.Repositories.interfaces;
-using SnapMob_Backend.Services.implementation;
-using SnapMob_Backend.Services.interfaces;
-using SnapMob_Backend.Services.Services.implementation;
-using SnapMob_Backend.Services.Services.interfaces;
+using SnapMob_Backend.Extensions;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-
-// ✅ Swagger Configuration (with JWT Auth button)
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -31,7 +22,6 @@ builder.Services.AddSwaggerGen(c =>
         Description = "SnapMob Backend API with JWT Authentication"
     });
 
-    // Add JWT Authorization
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -59,27 +49,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-
-builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IProductBrandRepository, ProductBrandRepository>();
-builder.Services.AddScoped<IWishlistRepository, WishlistRepository>();
-builder.Services.AddScoped<ICartRepository, CartRepository>();
-
-
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IProductService, ProductService>();
-builder.Services.AddScoped<CloudinaryService>();
-builder.Services.AddScoped<IProductBrandService, ProductBrandService>();
-builder.Services.AddScoped<IWishlistService, WishlistService>();
-builder.Services.AddScoped<ICartService, CartService>();
-
-
-
-builder.Services.AddAutoMapper(typeof(MappingProfile));
+builder.Services.AddAppServices();
 
 
 var secretKey = builder.Configuration["Jwt:Secret"];
@@ -110,13 +80,13 @@ builder.Services.AddAuthentication(options =>
 });
 
 
-
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("Admin", policy => policy.RequireRole("admin"));
     options.AddPolicy("User", policy => policy.RequireRole("user", "admin"));
     options.AddPolicy("Customer", policy => policy.RequireRole("user"));
 });
+
 
 var app = builder.Build();
 
@@ -127,12 +97,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
-
-
 app.Run();

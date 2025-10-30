@@ -1,11 +1,8 @@
-﻿namespace SnapMob_Backend.Models
-{
-    public class Cart : BaseEntity
-    {
-        public int UserId { get; set; }
+﻿using SnapMob_Backend.Models;
 
-        // 🧭 Navigation
-        public User? User { get; set; }
-        public ICollection<CartItem>? CartItems { get; set; }
-    }
+public class Cart : BaseEntity
+{
+    public int UserId { get; set; }
+    public bool IsDeleted { get; set; } = false;
+    public List<CartItem> Items { get; set; } = new List<CartItem>();
 }

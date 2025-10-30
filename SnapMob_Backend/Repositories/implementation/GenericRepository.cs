@@ -56,5 +56,9 @@ namespace SnapMob_Backend.Repositories.implementation
             return _dbSet.AsQueryable();
         }
 
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
     }
 }

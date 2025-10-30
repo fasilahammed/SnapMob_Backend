@@ -4,24 +4,20 @@
     {
         public int Id { get; set; }
 
-        // 🏷️ Basic info
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public int CurrentStock { get; set; }
         public bool IsActive { get; set; }
 
-        // 📱 Product specifications
         public string Battery { get; set; } = string.Empty;
         public string Camera { get; set; } = string.Empty;
         public string Storage { get; set; } = string.Empty;
         public string Display { get; set; } = string.Empty;
 
-        // 🔗 Brand Info
         public int BrandId { get; set; }
 
 
-        // 📸 Image URLs
         public List<string> ImageUrls { get; set; } = new();
     }
 }
