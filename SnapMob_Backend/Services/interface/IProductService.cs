@@ -6,8 +6,8 @@ namespace SnapMob_Backend.Services.Services.interfaces
     {
         Task<ProductListResponseDTO> GetProductsAsync(ProductQueryDTO query);
         Task<ProductDTO?> GetProductByIdAsync(int id);
-        Task<ProductDTO> AddProductAsync(ProductCreateUpdateDTO dto);
-        Task<ProductDTO?> UpdateProductAsync(int id, ProductCreateUpdateDTO dto);
+        Task<ProductDTO> AddProductAsync(ProductCreateDTO dto);
+        Task<ProductDTO?> UpdateProductAsync(int id, ProductUpdateDTO dto);
         Task<bool> DeleteProductAsync(int id);
     }
 }

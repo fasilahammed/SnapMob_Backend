@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SnapMob_Backend.Data;
 using SnapMob_Backend.Extensions;
+using SnapMob_Backend.Middlewares;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -89,6 +90,8 @@ builder.Services.AddAuthorization(options =>
 
 
 var app = builder.Build();
+
+//app.UseMiddleware<ExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

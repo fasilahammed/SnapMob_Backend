@@ -41,7 +41,7 @@ namespace SnapMob_Backend.Controllers
        
         [HttpPost]
         [Authorize(Policy = "Admin")]
-        public async Task<IActionResult> AddProduct([FromForm] ProductCreateUpdateDTO dto)
+        public async Task<IActionResult> AddProduct([FromForm] ProductCreateDTO dto)
         {
             var created = await _productService.AddProductAsync(dto);
             return CreatedAtAction(nameof(GetProductById), new { id = created.Id },
@@ -51,7 +51,7 @@ namespace SnapMob_Backend.Controllers
        
         [HttpPut("{id}")]
         [Authorize(Policy = "Admin")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductCreateUpdateDTO dto)
+        public async Task<IActionResult> UpdateProduct(int id, [FromForm] ProductUpdateDTO dto)
         {
             var updated = await _productService.UpdateProductAsync(id, dto);
             if (updated == null)

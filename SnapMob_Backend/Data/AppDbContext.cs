@@ -37,6 +37,9 @@ namespace SnapMob_Backend.Data
                 .Property(p => p.Price)
                 .HasPrecision(18, 2);
 
+           
+
+
         }
     }
 }

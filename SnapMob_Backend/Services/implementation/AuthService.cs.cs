@@ -33,7 +33,7 @@ namespace SnapMob_Backend.Services.implementation
                     throw new ArgumentNullException(nameof(registerDto), "Register request cannot be null");
                 }
 
-                registerDto.Email = registerDto.Email.ToLower().Trim();
+                registerDto.Email = registerDto.Email.Trim().ToLower();
                 registerDto.Name = registerDto.Name.Trim();
                 registerDto.Password = registerDto.Password.Trim();
 
@@ -50,7 +50,7 @@ namespace SnapMob_Backend.Services.implementation
                     Email = registerDto.Email,
                     Name = registerDto.Name,
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
-                    Role = Roles.User // Fixed casing convention
+                    Role = Roles.User 
                 };
 
                 await _userrepo.AddAsync(newUser);

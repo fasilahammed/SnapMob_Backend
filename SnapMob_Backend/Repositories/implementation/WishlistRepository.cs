@@ -20,7 +20,7 @@ namespace SnapMob_Backend.Repositories.implementation
                 .Include(w => w.Product)
                     .ThenInclude(p => p.Brand)
                 .Include(w => w.Product.Images)
-                .Where(w => w.UserId == userId && !w.IsDeleted)
+                .Where(w => w.UserId == userId && !w.IsDeleted && !w.Product.IsDeleted && w.Product.IsActive)
                 .ToListAsync();
         }
 

@@ -19,8 +19,14 @@ public class CartService : ICartService
             return new ApiResponse<string>(400, "Quantity must be between 1 and 5");
 
         var product = await _productRepo.GetByIdAsync(productId);
-        if (product == null || !product.IsActive)
+        if (product == null || product.IsDeleted || !product.IsActive)
             return new ApiResponse<string>(404, "Product not found or inactive");
+
+        if (product.CurrentStock <= 0)
+            return new ApiResponse<string>(400, "Product is out of stock");
+
+        if (quantity > product.CurrentStock)
+            return new ApiResponse<string>(400, $"Only {product.CurrentStock} items available in stock");
 
         var cart = await _cartRepo.GetCartWithItemsByUserIdAsync(userId);
         if (cart == null)
@@ -30,12 +36,17 @@ public class CartService : ICartService
         }
 
         var existingItem = cart.Items.FirstOrDefault(i => i.ProductId == productId);
+
         if (existingItem != null)
         {
-            if (existingItem.Quantity + quantity > 5)
+            int newTotalQty = existingItem.Quantity + quantity;
+            if (newTotalQty > product.CurrentStock)
+                return new ApiResponse<string>(400, $"Only {product.CurrentStock} items available in stock");
+
+            if (newTotalQty > 5)
                 return new ApiResponse<string>(400, "Quantity cannot exceed 5");
 
-            existingItem.Quantity += quantity;
+            existingItem.Quantity = newTotalQty;
         }
         else
         {
@@ -57,7 +68,7 @@ public class CartService : ICartService
     public async Task<ApiResponse<object>> GetCartForUserAsync(int userId)
     {
         var cart = await _cartRepo.GetCartWithItemsByUserIdAsync(userId);
-        if (cart == null || !cart.Items.Any())
+        if (cart == null || !cart.Items.Any() )
             return new ApiResponse<object>(200, "Cart is empty", new { Items = Array.Empty<object>() });
 
         var response = new

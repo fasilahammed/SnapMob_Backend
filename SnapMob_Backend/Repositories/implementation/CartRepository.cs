@@ -14,11 +14,22 @@ public class CartRepository : GenericRepository<Cart>, ICartRepository
 
     public async Task<Cart?> GetCartWithItemsByUserIdAsync(int userId)
     {
-        return await _context.Carts
+        var cart = await _context.Carts
             .Include(c => c.Items)
                 .ThenInclude(i => i.Product)
             .FirstOrDefaultAsync(c => c.UserId == userId && !c.IsDeleted);
+
+        if (cart == null)
+            return null;
+
+        
+        cart.Items = cart.Items
+            .Where(i => i.Product != null && !i.Product.IsDeleted && i.Product.IsActive)
+            .ToList();
+
+        return cart;
     }
+
 
     public async Task<CartItem?> GetCartItemByIdAsync(int cartItemId, int userId)
     {

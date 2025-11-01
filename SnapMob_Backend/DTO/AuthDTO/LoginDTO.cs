@@ -16,6 +16,8 @@ namespace SnapMob_Backend.DTO.AuthDTO
         [MaxLength(50, ErrorMessage = "Password cannot exceed 50 characters")]
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$",
         ErrorMessage = "Password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special character")]
+        
+
         public string Password { get; set; } = null!;
     }
 }

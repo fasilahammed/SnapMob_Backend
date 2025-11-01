@@ -23,7 +23,6 @@ namespace SnapMob_Backend.Services.implementation
             _cloudinaryService = cloudinaryService;
         }
 
-        // ✅ Get all products with pagination/filter
         public async Task<ProductListResponseDTO> GetProductsAsync(ProductQueryDTO query)
         {
             var products = await _productRepository.GetProductsAsync(
@@ -53,7 +52,6 @@ namespace SnapMob_Backend.Services.implementation
             };
         }
 
-        // ✅ Get product by id
         public async Task<ProductDTO?> GetProductByIdAsync(int id)
         {
             var product = await _productRepository.GetQueryable()
@@ -65,8 +63,7 @@ namespace SnapMob_Backend.Services.implementation
         }
 
 
-        // ✅ Add product (supports multiple Cloudinary images)
-        public async Task<ProductDTO> AddProductAsync(ProductCreateUpdateDTO dto)
+        public async Task<ProductDTO> AddProductAsync(ProductCreateDTO dto)
         {
             var product = _mapper.Map<Product>(dto);
             product.Images = new List<ProductImage>();
@@ -90,8 +87,7 @@ namespace SnapMob_Backend.Services.implementation
             return _mapper.Map<ProductDTO>(product);
         }
 
-        // ✅ Update product (replace images if provided)
-        public async Task<ProductDTO?> UpdateProductAsync(int id, ProductCreateUpdateDTO dto)
+        public async Task<ProductDTO?> UpdateProductAsync(int id, ProductUpdateDTO dto)
         {
             var existingProduct = await _productRepository.GetByIdAsync(id);
             if (existingProduct == null)
@@ -101,7 +97,6 @@ namespace SnapMob_Backend.Services.implementation
 
             if (dto.Images != null && dto.Images.Any())
             {
-                // delete old images
                 foreach (var img in existingProduct.Images)
                 {
                     if (!string.IsNullOrEmpty(img.PublicId))
@@ -110,7 +105,6 @@ namespace SnapMob_Backend.Services.implementation
 
                 existingProduct.Images.Clear();
 
-                // upload new images
                 foreach (var file in dto.Images)
                 {
                     var upload = await _cloudinaryService.UploadImageAsync(file);
@@ -128,7 +122,6 @@ namespace SnapMob_Backend.Services.implementation
             return _mapper.Map<ProductDTO>(existingProduct);
         }
 
-        // ✅ Delete product (also remove all Cloudinary images)
         public async Task<bool> DeleteProductAsync(int id)
         {
             var product = await _productRepository.GetByIdAsync(id);
