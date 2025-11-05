@@ -1,9 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SnapMob_Backend.Data;
 using SnapMob_Backend.Models;
+using SnapMob_Backend.Repositories.implementation;
 using SnapMob_Backend.Repositories.interfaces;
+using SnapMob_Backend.Repositories.Interfaces; // ✅ Corrected namespace
 
-namespace SnapMob_Backend.Repositories.implementation
+namespace SnapMob_Backend.Repositories.Implementation
 {
     public class ProductRepository : GenericRepository<Product>, IProductRepository
     {
@@ -23,7 +25,7 @@ namespace SnapMob_Backend.Repositories.implementation
             int pageSize = 12)
         {
             var query = _context.Products
-                .Where(p=>!p.IsDeleted)
+                .Where(p => !p.IsDeleted)
                 .Include(p => p.Brand)
                 .Include(p => p.Images)
                 .AsQueryable();
@@ -53,9 +55,7 @@ namespace SnapMob_Backend.Repositories.implementation
             decimal? minPrice = null,
             decimal? maxPrice = null)
         {
-            var query = _context.Products
-                .Where(p => !p.IsDeleted)
-                .AsQueryable();
+            var query = _context.Products.Where(p => !p.IsDeleted).AsQueryable();
 
             if (!string.IsNullOrEmpty(search))
                 query = query.Where(p => p.Name.Contains(search));

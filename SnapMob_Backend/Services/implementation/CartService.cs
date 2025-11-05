@@ -1,6 +1,6 @@
 ﻿using SnapMob_Backend.Common;
-using SnapMob_Backend.Models;
-using SnapMob_Backend.Repositories.interfaces;
+using SnapMob_Backend.Repositories.Interfaces;
+
 
 public class CartService : ICartService
 {
@@ -68,26 +68,38 @@ public class CartService : ICartService
     public async Task<ApiResponse<object>> GetCartForUserAsync(int userId)
     {
         var cart = await _cartRepo.GetCartWithItemsByUserIdAsync(userId);
-        if (cart == null || !cart.Items.Any() )
-            return new ApiResponse<object>(200, "Cart is empty", new { Items = Array.Empty<object>() });
+
+        if (cart == null || !cart.Items.Any())
+            return new ApiResponse<object>(200, "Cart is empty", new
+            {
+                TotalItems = 0,
+                TotalAmount = 0m,
+                Items = Array.Empty<object>()
+            });
+
+        var items = cart.Items.Select(i => new
+        {
+            i.Id,
+            i.ProductId,
+            i.ProductName,
+            i.Price,
+            i.Quantity,
+            i.ImageUrl,
+            SubTotal = i.Price * i.Quantity 
+        }).ToList();
+
+        var totalAmount = items.Sum(i => i.SubTotal);
 
         var response = new
         {
-            TotalItems = cart.Items.Sum(i => i.Quantity),
-            TotalPrice = cart.Items.Sum(i => i.Price * i.Quantity),
-            Items = cart.Items.Select(i => new
-            {
-                i.Id,
-                i.ProductId,
-                i.ProductName,
-                i.Price,
-                i.Quantity,
-                i.ImageUrl
-            })
+            TotalItems = items.Sum(i => i.Quantity),
+            TotalAmount = totalAmount,
+            Items = items
         };
 
         return new ApiResponse<object>(200, "Cart fetched successfully", response);
     }
+
 
     public async Task<ApiResponse<string>> UpdateCartItemAsync(int userId, int cartItemId, int quantity)
     {

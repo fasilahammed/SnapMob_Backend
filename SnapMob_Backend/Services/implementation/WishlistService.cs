@@ -4,6 +4,8 @@ using SnapMob_Backend.DTO;
 using SnapMob_Backend.Models;
 using SnapMob_Backend.Repositories.interfaces;
 using SnapMob_Backend.Services.Services.interfaces;
+using SnapMob_Backend.Repositories.Interfaces;
+
 
 namespace SnapMob_Backend.Services.Services.implementation
 {

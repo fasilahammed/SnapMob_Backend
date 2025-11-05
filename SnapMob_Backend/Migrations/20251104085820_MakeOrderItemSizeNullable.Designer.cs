@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SnapMob_Backend.Data;
 
@@ -11,9 +12,11 @@ using SnapMob_Backend.Data;
 namespace SnapMob_Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251104085820_MakeOrderItemSizeNullable")]
+    partial class MakeOrderItemSizeNullable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -138,14 +141,6 @@ namespace SnapMob_Backend.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("BillingName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("BillingPhone")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("BillingState")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -185,11 +180,17 @@ namespace SnapMob_Backend.Migrations
                     b.Property<int>("OrderStatus")
                         .HasColumnType("int");
 
+                    b.Property<string>("PaymentId")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("PaymentMethod")
                         .HasColumnType("int");
 
                     b.Property<int>("PaymentStatus")
                         .HasColumnType("int");
+
+                    b.Property<string>("RazorpayOrderId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("TotalAmount")
                         .HasPrecision(18, 2)

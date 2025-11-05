@@ -3,6 +3,8 @@ using Microsoft.IdentityModel.Tokens;
 using SnapMob_Backend.Data;
 using SnapMob_Backend.DTO.AuthDTO;
 using SnapMob_Backend.Models;
+using SnapMob_Backend.Repositories.Interfaces;
+
 using SnapMob_Backend.Repositories.interfaces;
 using SnapMob_Backend.Services.Services.interfaces;
 using System.IdentityModel.Tokens.Jwt;

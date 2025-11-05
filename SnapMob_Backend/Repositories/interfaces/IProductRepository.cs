@@ -1,6 +1,6 @@
 ﻿using SnapMob_Backend.Models;
 
-namespace SnapMob_Backend.Repositories.interfaces
+namespace SnapMob_Backend.Repositories.Interfaces
 {
     public interface IProductRepository : IGenericRepository<Product>
     {

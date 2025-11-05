@@ -2,6 +2,8 @@
 using SnapMob_Backend.Data;
 using SnapMob_Backend.Models;
 using SnapMob_Backend.Repositories.interfaces;
+using SnapMob_Backend.Repositories.Implementation;
+
 
 namespace SnapMob_Backend.Repositories.implementation
 {

@@ -1,5 +1,7 @@
 ﻿using SnapMob_Backend.Models;
 using SnapMob_Backend.Repositories.interfaces;
+using SnapMob_Backend.Repositories.Interfaces;
+
 
 public interface ICartRepository : IGenericRepository<Cart>
 {

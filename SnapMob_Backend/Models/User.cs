@@ -12,6 +12,9 @@ namespace SnapMob_Backend.Models
 
         public Roles Role { get; set; } = Roles.user;
         public bool IsBlocked { get; set; } = false;
+        public string? PhoneNumber { get; set; }
+        public string? Address { get; set; }
+        public string? ProfileImage { get; set; }
     }
     public enum Roles
     {
