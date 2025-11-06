@@ -15,6 +15,9 @@ public class CartRepository : GenericRepository<Cart>, ICartRepository
     public async Task<Cart?> GetCartWithItemsByUserIdAsync(int userId)
     {
         var cart = await _context.Carts
+              .Include(c => c.Items)
+                  .ThenInclude(i => i.Product)
+        .ThenInclude(p => p.Brand)
             .Include(c => c.Items)
                 .ThenInclude(i => i.Product)
                     .ThenInclude(p => p.Images)

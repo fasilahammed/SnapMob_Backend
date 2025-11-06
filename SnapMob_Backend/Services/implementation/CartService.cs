@@ -50,10 +50,13 @@ public class CartService : ICartService
         }
         else
         {
+            var brandName = product.Brand?.Name ?? "Unknown Brand";
+
             var cartItem = new CartItem
             {
                 ProductId = product.Id,
                 ProductName = product.Name,
+                BrandName = brandName, // 🧩 Added here
                 Price = product.Price,
                 ImageUrl = product.Images?.FirstOrDefault()?.ImageUrl,
                 Quantity = quantity
@@ -82,6 +85,7 @@ public class CartService : ICartService
             i.Id,
             i.ProductId,
             i.ProductName,
+            i.BrandName,
             i.Price,
             i.Quantity,
             i.ImageUrl,

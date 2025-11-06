@@ -1,9 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SnapMob_Backend.Data;
 using SnapMob_Backend.Models;
-using SnapMob_Backend.Repositories.implementation;
-using SnapMob_Backend.Repositories.interfaces;
-using SnapMob_Backend.Repositories.Interfaces; // ✅ Corrected namespace
+using SnapMob_Backend.Repositories.Interfaces;
 
 namespace SnapMob_Backend.Repositories.Implementation
 {
@@ -14,6 +12,14 @@ namespace SnapMob_Backend.Repositories.Implementation
         public ProductRepository(AppDbContext context) : base(context)
         {
             _context = context;
+        }
+
+        public override async Task<Product?> GetByIdAsync(int id)
+        {
+            return await _context.Products
+                .Include(p => p.Brand)
+                .Include(p => p.Images)
+                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         }
 
         public async Task<IEnumerable<Product>> GetProductsAsync(

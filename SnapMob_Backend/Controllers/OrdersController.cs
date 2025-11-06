@@ -34,7 +34,7 @@ namespace SnapMob_Backend.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ Get all orders for the logged-in user (Customer)
+        // ✅ Get logged-in user's orders
         [HttpGet]
         [Authorize(Policy = "Customer")]
         public async Task<IActionResult> GetMyOrders()
@@ -44,9 +44,9 @@ namespace SnapMob_Backend.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ Get order by ID (Customer)
+        // ✅ Get single order details
         [HttpGet("{orderId}")]
-        [Authorize(Policy = "Customer")]
+        [Authorize(Policy = "Admin")]
         public async Task<IActionResult> GetOrderById(int orderId)
         {
             int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -54,12 +54,14 @@ namespace SnapMob_Backend.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ Get all orders (Admin)
-        [HttpGet("admin/all")]
+        // ✅ Filter orders for admin (All + Search + Status)
+        [HttpGet("admin/filter")]
         [Authorize(Policy = "Admin")]
-        public async Task<IActionResult> GetAllOrders()
+        public async Task<IActionResult> FilterOrders(
+            [FromQuery] string status = "all",
+            [FromQuery] string? search = null)
         {
-            var response = await _orderService.GetAllOrdersAsync();
+            var response = await _orderService.FilterOrdersAsync(status, search);
             return StatusCode(response.StatusCode, response);
         }
 
@@ -81,21 +83,13 @@ namespace SnapMob_Backend.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ Admin dashboard stats (total revenue, delivered orders, products)
+        
+
         [HttpGet("admin/dashboard")]
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> GetDashboardStats([FromQuery] string type = "all")
         {
             var response = await _orderService.GetDashboardStatsAsync(type);
-            return StatusCode(response.StatusCode, response);
-        }
-
-        // ✅ Get orders by user (Admin)
-        [HttpGet("admin/user/{userId}")]
-        [Authorize(Policy = "Admin")]
-        public async Task<IActionResult> GetOrdersByUser(int userId)
-        {
-            var response = await _orderService.GetOrdersByUserIdAsync(userId);
             return StatusCode(response.StatusCode, response);
         }
     }

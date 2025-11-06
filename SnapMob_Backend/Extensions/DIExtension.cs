@@ -32,7 +32,7 @@ namespace SnapMob_Backend.Extensions
             services.AddScoped<IProductBrandService, ProductBrandService>();
             services.AddScoped<IWishlistService, WishlistService>();
             services.AddScoped<ICartService, CartService>();
-            services.AddScoped<IPaymentService, PaymentService>();
+            //services.AddScoped<IPaymentService, PaymentService>();
             services.AddScoped<CloudinaryService>();
 
             //  AutoMapper

@@ -24,7 +24,7 @@ public class CartController : ControllerBase
         return StatusCode(response.StatusCode, response);
     }
 
-    [Authorize(Policy = "User")]
+    [Authorize(Policy = "admin")]
     [HttpGet("{userId}")]
     public async Task<IActionResult> GetByAdmin(int userId)
     {

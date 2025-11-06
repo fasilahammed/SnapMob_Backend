@@ -11,6 +11,7 @@ namespace SnapMob_Backend.Models
         public Product Product { get; set; }
 
         public string Name { get; set; }
+        public string BrandName { get; set; } = string.Empty;
 
         [Precision(18, 2)]
         public decimal Price { get; set; }
