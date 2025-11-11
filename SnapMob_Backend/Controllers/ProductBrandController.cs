@@ -15,6 +15,8 @@ namespace SnapMob_Backend.Controllers
 
         public ProductBrandController(IProductBrandService brandService)
         {
+
+        
             _brandService = brandService;
         }
 

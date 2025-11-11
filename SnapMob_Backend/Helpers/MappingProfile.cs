@@ -36,6 +36,19 @@ namespace SnapMob_Backend.Common
                  .ForMember(dest => dest.Price, opt => opt.MapFrom(src => src.Product.Price))
                  .ForMember(dest => dest.ImageUrls, opt => opt.MapFrom(src => src.Product.Images.Select(i => i.ImageUrl)));
 
+            CreateMap<CartItem, CartItemDto>()
+               .ForMember(d => d.BrandName,
+                   opt => opt.MapFrom(s => s.BrandName ?? s.Product.Brand.Name))
+               .ForMember(d => d.ImageUrl,
+                   opt => opt.MapFrom(s => s.ImageUrl ?? s.Product.Images.FirstOrDefault().ImageUrl));
+
+            CreateMap<Cart, CartDto>()
+                .ForMember(d => d.TotalItems,
+                    opt => opt.MapFrom(s => s.Items.Sum(i => i.Quantity)))
+                .ForMember(d => d.TotalAmount,
+                    opt => opt.MapFrom(s => s.Items.Sum(i => i.Price * i.Quantity)))
+                .ForMember(d => d.Items, opt => opt.MapFrom(s => s.Items));
+
             CreateMap<User, UserDTO>().ReverseMap();
             CreateMap<UserUpdateDTO, User>();
             CreateMap<User, UserDTO>()
@@ -43,13 +56,16 @@ namespace SnapMob_Backend.Common
                      opt => opt.MapFrom(src => src.CreatedOn.ToString("yyyy-MM-dd")));
 
             CreateMap<OrderItem, OrderItemDto>()
-                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.BrandName, opt => opt.MapFrom(src => src.BrandName))
+                .ForMember(dest => dest.ImageUrl, opt => opt.MapFrom(src => src.ImageUrl));
 
             CreateMap<Order, OrderDto>()
                 .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod.ToString()))
                 .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => src.PaymentStatus.ToString()))
                 .ForMember(dest => dest.OrderStatus, opt => opt.MapFrom(src => src.OrderStatus.ToString()))
                 .ForMember(dest => dest.Items, opt => opt.MapFrom(src => src.Items));
+
         }
     }
-}
+    }

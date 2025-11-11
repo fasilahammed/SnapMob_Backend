@@ -20,7 +20,6 @@ namespace SnapMob_Backend.Controllers
             _orderService = orderService;
         }
 
-        // ✅ Create order (Customer)
         [HttpPost("checkout")]
         [Authorize(Policy = "Customer")]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
@@ -34,7 +33,6 @@ namespace SnapMob_Backend.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ Get logged-in user's orders
         [HttpGet]
         [Authorize(Policy = "Customer")]
         public async Task<IActionResult> GetMyOrders()
@@ -44,9 +42,8 @@ namespace SnapMob_Backend.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ Get single order details
         [HttpGet("{orderId}")]
-        [Authorize(Policy = "Admin")]
+        [Authorize(Policy = "Customer,Admin")]
         public async Task<IActionResult> GetOrderById(int orderId)
         {
             int userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -54,7 +51,6 @@ namespace SnapMob_Backend.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ Filter orders for admin (All + Search + Status)
         [HttpGet("admin/filter")]
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> FilterOrders(
@@ -65,7 +61,6 @@ namespace SnapMob_Backend.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ Update order status (Admin)
         [HttpPost("admin/update-status/{orderId}")]
         [Authorize(Policy = "Admin")]
         public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] UpdateOrderStatusDto dto)
@@ -74,7 +69,6 @@ namespace SnapMob_Backend.Controllers
             return StatusCode(response.StatusCode, response);
         }
 
-        // ✅ Cancel order (Customer)
         [HttpPost("cancel/{orderId}")]
         [Authorize(Policy = "Customer")]
         public async Task<IActionResult> CancelOrder(int orderId)

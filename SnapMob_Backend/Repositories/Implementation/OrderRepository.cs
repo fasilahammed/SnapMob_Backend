@@ -2,10 +2,8 @@
 using SnapMob_Backend.Data;
 using SnapMob_Backend.Models;
 using SnapMob_Backend.Repositories.Interfaces;
-using System.Threading.Tasks;
 
 namespace SnapMob_Backend.Repositories.Implementation
-
 {
     public class OrderRepository : GenericRepository<Order>, IOrderRepository
     {
@@ -20,10 +18,12 @@ namespace SnapMob_Backend.Repositories.Implementation
         {
             return await _context.Orders
                 .Include(o => o.Items)
-                .ThenInclude(i => i.Product)
+                    .ThenInclude(i => i.Product)
+                        .ThenInclude(p => p.Brand)
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Product)
+                        .ThenInclude(p => p.Images)
                 .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId);
         }
-
-       
     }
 }

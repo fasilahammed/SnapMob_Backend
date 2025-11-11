@@ -1,8 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using SnapMob_Backend.Data;
 using SnapMob_Backend.Models;
 using SnapMob_Backend.Repositories.Interfaces;
-using System.Linq;
 using System.Linq.Expressions;
 
 namespace SnapMob_Backend.Repositories.Implementation
@@ -18,10 +18,11 @@ namespace SnapMob_Backend.Repositories.Implementation
             _dbSet = context.Set<T>();
         }
 
+        // ✅ Supports Includes and ThenIncludes
         public virtual async Task<IEnumerable<T>> GetAllAsync(
             Expression<Func<T, bool>>? predicate = null,
             Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
-            Func<IQueryable<T>, IQueryable<T>>? include = null)
+            Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null)
         {
             IQueryable<T> query = _dbSet.Where(e => !e.IsDeleted);
 
@@ -29,7 +30,7 @@ namespace SnapMob_Backend.Repositories.Implementation
                 query = query.Where(predicate);
 
             if (include != null)
-                query = include(query);
+                query = include(query); // ✅ Works now for Include/ThenInclude
 
             if (orderBy != null)
                 query = orderBy(query);
@@ -42,18 +43,21 @@ namespace SnapMob_Backend.Repositories.Implementation
             return await _dbSet.FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
         }
 
+        // ✅ Add & persist
         public async Task AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
             await _context.SaveChangesAsync();
         }
 
+        // ✅ Update & persist
         public async Task UpdateAsync(T entity)
         {
             _dbSet.Update(entity);
             await _context.SaveChangesAsync();
         }
 
+        // ✅ Soft delete & persist
         public async Task DeleteAsync(int id)
         {
             var entity = await _dbSet.FindAsync(id);
@@ -65,11 +69,10 @@ namespace SnapMob_Backend.Repositories.Implementation
             }
         }
 
-        public IQueryable<T> GetQueryable()
-        {
-            return _dbSet.AsQueryable();
-        }
+        // ✅ Expose IQueryable for advanced querying
+        public IQueryable<T> GetQueryable() => _dbSet.AsQueryable();
 
+        // ✅ Manual save
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();

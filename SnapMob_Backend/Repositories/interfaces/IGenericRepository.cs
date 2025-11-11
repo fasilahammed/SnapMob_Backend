@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Microsoft.EntityFrameworkCore.Query;
+using System.Linq.Expressions;
 using SnapMob_Backend.Models;
 
 namespace SnapMob_Backend.Repositories.Interfaces
@@ -8,13 +9,13 @@ namespace SnapMob_Backend.Repositories.Interfaces
         Task<IEnumerable<T>> GetAllAsync(
             Expression<Func<T, bool>>? predicate = null,
             Func<IQueryable<T>, IOrderedQueryable<T>>? orderBy = null,
-            Func<IQueryable<T>, IQueryable<T>>? include = null);
+            Func<IQueryable<T>, IIncludableQueryable<T, object>>? include = null); // ✅ FIXED
 
         Task<T?> GetByIdAsync(int id);
         Task AddAsync(T entity);
         Task UpdateAsync(T entity);
         Task DeleteAsync(int id);
         Task SaveChangesAsync();
-        IQueryable<T> GetQueryable(); // ✅ Added here
+        IQueryable<T> GetQueryable();
     }
 }

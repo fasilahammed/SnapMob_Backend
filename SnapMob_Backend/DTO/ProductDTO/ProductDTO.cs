@@ -14,9 +14,10 @@
         public string Camera { get; set; } = string.Empty;
         public string Storage { get; set; } = string.Empty;
         public string Display { get; set; } = string.Empty;
-
+        
         public int BrandId { get; set; }
 
+        
 
         public List<string> ImageUrls { get; set; } = new();
     }

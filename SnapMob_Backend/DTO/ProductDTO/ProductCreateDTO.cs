@@ -32,6 +32,7 @@ namespace SnapMob_Backend.DTO.ProductDTO
 
         [Required]
         public int BrandId { get; set; }
+        
 
         public List<IFormFile>? Images { get; set; }
     }

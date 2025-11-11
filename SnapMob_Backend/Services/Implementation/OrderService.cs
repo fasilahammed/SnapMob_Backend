@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SnapMob_Backend.Common;
+using SnapMob_Backend.Data;
 using SnapMob_Backend.DTOs.OrderDTOs;
 using SnapMob_Backend.Enums;
 using SnapMob_Backend.Models;
@@ -15,92 +16,116 @@ namespace SnapMob_Backend.Services.Implementation
         private readonly ICartRepository _cartRepo;
         private readonly IOrderRepository _orderRepo;
         private readonly IProductRepository _productRepo;
+        private readonly AppDbContext _context; // ✅ for transaction
 
-        public OrderService(IMapper mapper, ICartRepository cartRepo, IOrderRepository orderRepo, IProductRepository productRepo)
+        public OrderService(
+            IMapper mapper,
+            ICartRepository cartRepo,
+            IOrderRepository orderRepo,
+            IProductRepository productRepo,
+            AppDbContext context)
         {
             _mapper = mapper;
             _cartRepo = cartRepo;
             _orderRepo = orderRepo;
             _productRepo = productRepo;
+            _context = context;
         }
 
-        // ✅ Create Order
+        // ✅ CREATE ORDER — Atomic transaction + brand name fix
         public async Task<ApiResponse<OrderDto>> CreateOrderAsync(int userId, CreateOrderDto dto)
         {
-            var cart = await _cartRepo.GetCartWithItemsByUserIdAsync(userId);
-            if (cart == null || !cart.Items.Any())
-                return new ApiResponse<OrderDto>(400, "Cart is empty");
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            decimal total = 0;
-
-            foreach (var item in cart.Items)
+            try
             {
-                var product = await _productRepo.GetByIdAsync(item.ProductId);
-                if (product == null)
-                    return new ApiResponse<OrderDto>(404, $"Product {item.ProductId} not found");
+                var cart = await _cartRepo.GetCartWithItemsByUserIdAsync(userId);
+                if (cart == null || !cart.Items.Any())
+                    return new ApiResponse<OrderDto>(400, "Cart is empty");
 
-                if (product.CurrentStock < item.Quantity)
-                    return new ApiResponse<OrderDto>(400, $"Not enough stock for {product.Name}");
+                decimal total = 0;
 
-                product.CurrentStock -= item.Quantity;
-                await _productRepo.UpdateAsync(product);
-
-                item.ImageUrl = product.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl
-                                ?? product.Images.FirstOrDefault()?.ImageUrl
-                                ?? "https://via.placeholder.com/150";
-
-                total += product.Price * item.Quantity;
-            }
-
-            var order = new Order
-            {
-                UserId = userId,
-                BillingName = dto.FullName,
-                BillingPhone = dto.PhoneNumber,
-                BillingStreet = dto.Street,
-                BillingCity = dto.City,
-                BillingState = dto.State,
-                BillingZip = dto.ZipCode,
-                PaymentMethod = PaymentMethod.CashOnDelivery,
-                PaymentStatus = PaymentStatus.Pending,
-                OrderStatus = OrderStatus.Processing,
-                TotalAmount = total,
-                Items = cart.Items.Select(c => new OrderItem
+                foreach (var item in cart.Items)
                 {
-                    ProductId = c.ProductId,
-                    Name = c.ProductName,
-                    BrandName = c.Product?.Brand?.Name ?? "Unknown Brand",
-                    Quantity = c.Quantity,
-                    Price = c.Price,
-                    ImageUrl = c.ImageUrl
-                }).ToList()
-            };
+                    var product = await _productRepo.GetByIdAsync(item.ProductId);
+                    if (product == null)
+                        return new ApiResponse<OrderDto>(404, $"Product {item.ProductId} not found");
 
-            await _orderRepo.AddAsync(order);
-            await _cartRepo.ClearCartForUserAsync(userId);
+                    if (product.CurrentStock < item.Quantity)
+                        return new ApiResponse<OrderDto>(400, $"Not enough stock for {product.Name}");
 
-            var orderDto = _mapper.Map<OrderDto>(order);
-            return new ApiResponse<OrderDto>(200, "Order placed successfully", orderDto);
+                    product.CurrentStock -= item.Quantity;
+                    _productRepo.UpdateAsync(product);
+
+                    // ✅ Ensure brand & image snapshot
+                    item.ImageUrl = product.Images.FirstOrDefault(i => i.IsMain)?.ImageUrl
+                                    ?? product.Images.FirstOrDefault()?.ImageUrl
+                                    ?? "https://via.placeholder.com/150";
+                    item.BrandName = product.Brand?.Name ?? "Unknown Brand";
+
+                    total += product.Price * item.Quantity;
+                }
+
+                // ✅ Build Order Snapshot
+                var order = new Order
+                {
+                    UserId = userId,
+                    BillingName = dto.FullName,
+                    BillingPhone = dto.PhoneNumber,
+                    BillingStreet = dto.Street,
+                    BillingCity = dto.City,
+                    BillingState = dto.State,
+                    BillingZip = dto.ZipCode,
+                    PaymentMethod = PaymentMethod.CashOnDelivery,
+                    PaymentStatus = PaymentStatus.Pending,
+                    OrderStatus = OrderStatus.Processing,
+                    TotalAmount = total,
+                    Items = cart.Items.Select(c => new OrderItem
+                    {
+                        ProductId = c.ProductId,
+                        Name = c.ProductName,
+                        BrandName = c.BrandName,
+                        Quantity = c.Quantity,
+                        Price = c.Price,
+                        ImageUrl = c.ImageUrl
+                    }).ToList()
+                };
+
+                await _orderRepo.AddAsync(order);
+                await _orderRepo.SaveChangesAsync();
+
+                await _cartRepo.ClearCartForUserAsync(userId);
+
+                await transaction.CommitAsync();
+
+                var orderDto = _mapper.Map<OrderDto>(order);
+                return new ApiResponse<OrderDto>(200, "Order placed successfully", orderDto);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return new ApiResponse<OrderDto>(500, $"Order creation failed: {ex.Message}");
+            }
         }
 
-        // ✅ Filter Orders (Admin)
+       
+
         public async Task<ApiResponse<IEnumerable<OrderDto>>> FilterOrdersAsync(string status, string? search)
         {
-            var query = _orderRepo.GetQueryable();
-
-            query = query
+            IQueryable<Order> query = _orderRepo.GetQueryable()
                 .Include(o => o.User)
                 .Include(o => o.Items)
-                .ThenInclude(i => i.Product);
+                    .ThenInclude(i => i.Product)
+                        .ThenInclude(p => p.Brand);
 
-            // Filter by status
             if (!string.IsNullOrEmpty(status) && status.ToLower() != "all")
             {
                 if (Enum.TryParse<OrderStatus>(status, true, out var parsedStatus))
+                {
                     query = query.Where(o => o.OrderStatus == parsedStatus);
+                }
             }
 
-            // Search by name or phone
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(o =>
@@ -108,17 +133,23 @@ namespace SnapMob_Backend.Services.Implementation
                     o.BillingPhone.Contains(search));
             }
 
-            var orders = await query.OrderByDescending(o => o.CreatedOn).ToListAsync();
+            var orders = await query
+                .OrderByDescending(o => o.CreatedOn)
+                .ToListAsync();
+
             var mapped = _mapper.Map<IEnumerable<OrderDto>>(orders);
             return new ApiResponse<IEnumerable<OrderDto>>(200, "Filtered orders fetched successfully", mapped);
         }
 
-        // ✅ Get Orders by User
+
+        // ✅ CUSTOMER — Get all orders
         public async Task<ApiResponse<IEnumerable<OrderDto>>> GetOrdersByUserIdAsync(int userId)
         {
             var orders = await _orderRepo.GetAllAsync(
                 predicate: o => o.UserId == userId,
-                include: q => q.Include(o => o.Items).ThenInclude(i => i.Product)
+                include: q => q.Include(o => o.Items)
+                               .ThenInclude(i => i.Product)
+                               .ThenInclude(p => p.Brand)
             );
 
             if (!orders.Any())
@@ -128,7 +159,7 @@ namespace SnapMob_Backend.Services.Implementation
             return new ApiResponse<IEnumerable<OrderDto>>(200, "Orders fetched successfully", mapped);
         }
 
-        // ✅ Get Single Order
+        // ✅ CUSTOMER / ADMIN — Get order by ID
         public async Task<ApiResponse<OrderDto>> GetOrderByIdAsync(int userId, int orderId)
         {
             var order = await _orderRepo.GetOrderWithItemsByIdAsync(orderId, userId);
@@ -139,7 +170,7 @@ namespace SnapMob_Backend.Services.Implementation
             return new ApiResponse<OrderDto>(200, "Order fetched successfully", mapped);
         }
 
-        // ✅ Update Order Status (Admin)
+        // ✅ ADMIN — Update order status
         public async Task<ApiResponse<OrderDto>> UpdateOrderStatusAsync(int orderId, OrderStatus newStatus)
         {
             var order = await _orderRepo.GetByIdAsync(orderId);
@@ -147,18 +178,24 @@ namespace SnapMob_Backend.Services.Implementation
                 return new ApiResponse<OrderDto>(404, "Order not found");
 
             if (order.OrderStatus == OrderStatus.Delivered)
-                return new ApiResponse<OrderDto>(400, "Cannot change status of a delivered order");
+                return new ApiResponse<OrderDto>(400, "Delivered order status cannot be changed.");
 
             order.OrderStatus = newStatus;
-            if (order.PaymentMethod == PaymentMethod.CashOnDelivery && newStatus == OrderStatus.Delivered)
-                order.PaymentStatus = PaymentStatus.Completed;
 
-            await _orderRepo.UpdateAsync(order);
+            if (order.PaymentMethod == PaymentMethod.CashOnDelivery &&
+                newStatus == OrderStatus.Delivered)
+            {
+                order.PaymentStatus = PaymentStatus.Completed;
+            }
+
+            _orderRepo.UpdateAsync(order);
+            await _orderRepo.SaveChangesAsync();
+
             var mapped = _mapper.Map<OrderDto>(order);
             return new ApiResponse<OrderDto>(200, "Order status updated successfully", mapped);
         }
 
-        // ✅ Cancel Order
+        // ✅ CUSTOMER — Cancel order and restore stock
         public async Task<ApiResponse<string>> CancelOrderAsync(int orderId)
         {
             var order = await _orderRepo.GetByIdAsync(orderId);
@@ -174,25 +211,32 @@ namespace SnapMob_Backend.Services.Implementation
                 if (product != null)
                 {
                     product.CurrentStock += item.Quantity;
-                    await _productRepo.UpdateAsync(product);
+                    _productRepo.UpdateAsync(product);
                 }
             }
 
             order.OrderStatus = OrderStatus.Cancelled;
             order.PaymentStatus = PaymentStatus.Refunded;
-            await _orderRepo.UpdateAsync(order);
+
+            _orderRepo.UpdateAsync(order);
+            await _productRepo.SaveChangesAsync();
+            await _orderRepo.SaveChangesAsync();
 
             return new ApiResponse<string>(200, "Order cancelled successfully and stock restored");
         }
 
-        // ✅ Dashboard Stats (Admin)
+        // ✅ ADMIN — Dashboard analytics
         public async Task<ApiResponse<object>> GetDashboardStatsAsync(string type)
         {
             var orders = await _orderRepo.GetAllAsync(
-                include: q => q.Include(o => o.Items).ThenInclude(i => i.Product)
+                include: q => q.Include(o => o.Items)
+                               .ThenInclude(i => i.Product)
             );
 
-            var deliveredOrders = orders.Where(o => o.OrderStatus == OrderStatus.Delivered).ToList();
+            var deliveredOrders = orders
+                .Where(o => o.OrderStatus == OrderStatus.Delivered)
+                .ToList();
+
             if (!deliveredOrders.Any())
                 return new ApiResponse<object>(404, "No delivered orders found");
 
@@ -207,6 +251,7 @@ namespace SnapMob_Backend.Services.Implementation
                 {
                     ProductId = g.Key,
                     ProductName = g.First().Name,
+                    Brand = g.First().BrandName,
                     TotalSold = g.Sum(i => i.Quantity),
                     ImageUrl = g.First().ImageUrl
                 })

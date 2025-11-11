@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SnapMob_Backend.DTOs.UserDTOs;
 using SnapMob_Backend.Services.Interfaces;
 using System.Threading.Tasks;
@@ -7,6 +8,8 @@ namespace SnapMob_Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
+
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;

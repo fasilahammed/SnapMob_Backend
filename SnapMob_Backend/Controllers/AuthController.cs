@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SnapMob_Backend.Common;
 using SnapMob_Backend.DTO.AuthDTO;
+using SnapMob_Backend.Services.Interfaces; // ✅ Important fix here
+
 using SnapMob_Backend.Services.Services.interfaces;
 
 namespace SnapMob_Backend.Controllers
